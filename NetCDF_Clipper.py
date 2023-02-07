@@ -26,6 +26,7 @@ from shapely.geometry import mapping
 import pandas as pd
 import os
 import re
+import numpy as np
 from datetime import timedelta, datetime
 
 #global variable
@@ -37,8 +38,8 @@ filepath =  os.getcwd()
 crs_code = "epsg:4326"
 
 ##INPUTS
-netc_folder = r"C:\Users\geotw\Documents\GitHub\NetCDF\Test"
-catchshapefile = r"D:\BarotseFloodplain\CATCHMAL\Data\SWAT\BFP_SWAT_Area_WGS_v2-00.shp"
+netc_folder = r"C:\Users\geotw\OneDrive - University of Leeds\EnivroMAL\Data\BethMroz\Test"
+catchshapefile = r"C:\Users\geotw\OneDrive - University of Leeds\EnivroMAL\Data\BethMroz\Test\BFP_SWAT_Area_WGS_v2-00.shp"
 
 def days_list(netc_file): 
     daylist = []
@@ -92,9 +93,11 @@ for i,file in enumerate(netc_files):
     var_open = net_open.pr
     var_open.rio.set_spatial_dims(x_dim="lat", y_dim="lon", inplace=True)
     var_open.rio.write_crs(crs_code, inplace=True)
-    clipped = var_open.rio.clip(catchshape.geometry.apply(mapping), catchshape.crs, drop=False)
-    for j in range(0,len(clipped.time)):
-        out_list.append(float(clipped[j].mean())*86400)
+    for j in range(0,len(var_open.time)):
+        clipped = var_open[j].rio.clip(catchshape.geometry.apply(mapping), drop=False)
+        values = clipped.values
+        maskedvalues = np.nanmean(values)*86400
+        out_list.append(float(maskedvalues))
 out_df =pd.DataFrame({'Date':out_dates,'PR':out_list})
 out_df.to_csv(os.path.join(filepath,(str(shapename+"_"+event_name+".csv")))
               ,sep=',',index=False)
